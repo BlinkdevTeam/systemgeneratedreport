@@ -8,7 +8,7 @@ function App() {
   return (
     <>
       <div className="flex flex-col">
-        <Hero />
+        {/* <Hero /> */}
         <ReportData />
       </div>
     </>
