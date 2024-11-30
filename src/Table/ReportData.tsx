@@ -1,207 +1,296 @@
 import React, { useEffect, useState } from "react";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-import { ref, onValue } from "firebase/database";
-import { database } from "../firebase";
-import logo from "../image/BCS_LOGO_ALT_OG.png";
+import { getDatabase, ref, get } from "firebase/database";
+import { database } from "../firebase"; // Import the firebase configuration
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image,
+  PDFViewer,
+} from "@react-pdf/renderer";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import Logo from "../image/BCS_LOGO_ALT_OG.png";
 
-declare module "jspdf" {
-  interface jsPDF {
-    autoTable: any;
-  }
+interface User {
+  affiliationAddress: string;
+  affiliationName: string;
+  affiliationRegion: string;
+  attendanceCheck: string;
+  email: string;
+  extName: string;
+  firstName: string;
+  fullName: string;
+  id: number;
+  lastName: string;
+  middleName: string;
+  participantType: string;
+  philriceEmployee: string;
+  philriceName: string;
+  philricePosition: string;
+  philriceStation: string;
+  philriceUnit: string;
+  day1timeAttended: string;
+  day2timeAttended: string;
+  day3timeAttended: string;
+  day4timeAttended: string;
 }
 
-const ReportData = () => {
-  const [data, setData] = useState<any[]>([]);
-
-  const columns: string[] = [
-    "Full Name",
-    "Station/Affiliation",
-    "Day 1 Attendance",
-    "Day 2 Attendance",
-    "Day 3 Attendance",
-    "Day 4 Attendance",
-    "No. of Days Attended",
-  ];
-  const pdfcolumns: string[] = [
-    "Full Name",
-    "Station/Affiliation",
-    "Day 1",
-    "Day 2",
-    "Day 3",
-    "Day 4",
-    "Total",
-  ];
+function App() {
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const dbRef = ref(database, "users");
-    onValue(dbRef, (snapshot: any) => {
-      const firebaseData = snapshot.val();
-      if (firebaseData) {
-        const formattedData = Object.entries(firebaseData).map(
-          ([key, value]) => ({
-            id: key,
-            ...(value as Record<string, any>),
-          })
-        );
-        setData(formattedData);
+    const fetchData = async () => {
+      const dbRef = ref(database, "users");
+      const snapshot = await get(dbRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const usersArray = Object.values(data) as User[];
+        setUsers(usersArray);
       } else {
-        setData([]);
+        console.log("No data available");
       }
-    });
+    };
+
+    fetchData();
   }, []);
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    //   doc.text("System Generated Report", 10, 10);
-
-    const img = logo;
-    const imageWidth = 45;
-    const imageHeight = 23;
-
-    const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()}/${
-      currentDate.getMonth() + 1
-    }/${currentDate.getFullYear()}`;
-
-    doc.addImage(img, "PNG", 10, 10, imageWidth, imageHeight);
-
-    doc.setFontSize(9);
-    doc.text(
-      "2/F Left Wing, ES Plaza, Lopez Ave. Los Baños, Laguna Philippines",
-      101,
-      15
-    );
-    doc.text("inquiries@blinkcreativestudio.com", 149, 20);
-    doc.text("0949 993 7469 / 0915 377 1777", 152, 26);
-    doc.text("www.blinkcreativestudio.com", 156, 31);
-
-    doc.text("Activity / Event: 36th Ugnay Palay Attendees", 12, 40);
-    doc.text("Date: December 3-5, 2024", 12, 44);
-    doc.text("Venue: DA-PhilRice CES", 12, 48);
-    doc.text(`Generated on: ${formattedDate}`, 12, 291);
-
-    const rows = data.map((item) => {
-      const attendedDays = [
-        item.day1timeAttended,
-        item.day2timeAttended,
-        item.day3timeAttended,
-        item.day4timeAttended,
-      ].filter(Boolean).length;
-
-      return [
-        item.fullName,
-        item.philriceStation || item.affiliationName || "N/A",
-        item.day1timeAttended || "N/A",
-        item.day2timeAttended || "N/A",
-        item.day3timeAttended || "N/A",
-        item.day4timeAttended || "N/A",
-        attendedDays.toString(),
-      ];
-    });
-
-    doc.autoTable({
-      head: [pdfcolumns],
-      body: rows,
-      startY: 54,
-      styles: {
-        font: "helvetica",
-        fontSize: 10,
-        textColor: [0, 0, 0],
-        lineColor: [200, 200, 200],
-        lineWidth: 0.5,
-        fillColor: [255, 255, 255],
-        cellPadding: 3,
-      },
-      headStyles: {
-        fontSize: 10,
-        fillColor: [14, 144, 70],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-      },
-      bodyStyles: {
-        fillColor: [255, 255, 255],
-        textColor: [50, 50, 50],
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245],
-      },
-      theme: "striped",
-    });
-
-    doc.save("report.pdf");
+  const chunkArray = (arr: User[], size: number) => {
+    const chunks: User[][] = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
   };
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-semibold mb-4">System Generated Report</h1>
-      <button
-        onClick={exportToPDF}
-        className="my-4 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-        Export to PDF
-      </button>
+  const userChunks = chunkArray(users, 10);
 
-      {data.length > 0 ? (
-        <>
-          <table className="min-w-full table-auto border-collapse border border-gray-200">
-            <thead>
-              <tr>
-                {columns.map((col) => (
-                  <th
-                    key={col}
-                    className="px-4 py-2 text-left border-b font-medium">
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((item) => {
-                const attendedDays = [
-                  item.day1timeAttended,
-                  item.day2timeAttended,
-                  item.day3timeAttended,
-                  item.day4timeAttended,
-                ].filter(Boolean).length;
+  const styles = StyleSheet.create({
+    page: {
+      flexDirection: "row",
+      justifyContent: "center",
+      padding: 20,
+    },
+    section: {
+      margin: 10,
+      padding: 10,
+      flexGrow: 1,
+    },
+    table: {
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
+      borderStyle: "solid",
+      borderWidth: 1,
+      borderColor: "#000",
+      marginTop: 10,
+    },
+    tableRow: {
+      display: "flex",
+      flexDirection: "row",
+      width: "100%",
+    },
+    tableCell: {
+      flex: 1,
+      padding: 5,
+      borderStyle: "solid",
+      borderWidth: 1,
+      borderColor: "#000",
+      textAlign: "left",
+      fontSize: 10,
+    },
+    header: {
+      backgroundColor: "#f0f0f0",
+      fontWeight: "bold",
+      fontSize: 12,
+      textAlign: "center",
+      padding: 2,
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    headerColumn: {
+      flexDirection: "column",
+      alignItems: "flex-end",
+      textAlign: "right",
+    },
+    bodyColumn: {
+      flexDirection: "column",
+      alignItems: "flex-start",
+      textAlign: "left",
+    },
+    title: {
+      fontSize: 10,
+      marginLeft: 110,
+    },
+    body: {
+      fontSize: 10,
+    },
+    time: {
+      fontSize: 10,
+      marginTop: 10,
+    },
+    logo: {
+      width: "auto",
+      height: "auto",
+      maxWidth: 100,
+      maxHeight: 50,
+    },
+  });
+
+  const currentDate = new Date();
+  const formattedDate = currentDate.toLocaleDateString();
+  const formattedTime = currentDate.toLocaleTimeString();
+
+  const MyDocument = () => (
+    <Document>
+      {userChunks.map((chunk, pageIndex) => (
+        <Page style={styles.page} key={pageIndex}>
+          <View style={styles.section}>
+            <View style={styles.headerRow}>
+              <Image style={styles.logo} src={Logo} />
+              <View style={styles.headerColumn}>
+                <Text style={styles.title}>
+                  2/F Left Wing, ES Plaza, Lopez Ave, Los Baños Laguna,
+                  Philippines
+                </Text>
+                <Text style={styles.title}>
+                  inquiries@blinkcreativestudio.com
+                </Text>
+                <Text style={styles.title}>0949 993 7469 / 0915 377 1777</Text>
+                <Text style={styles.title}>www.blinkcreativestudio.com</Text>
+              </View>
+            </View>
+            <View style={styles.headerRow}>
+              <View style={styles.bodyColumn}>
+                <Text style={styles.body}>
+                  Activity/Event: 36th Ugnay Palay Attendees
+                </Text>
+                <Text style={styles.body}>Date: December 3-5, 2024</Text>
+                <Text style={styles.body}>Venue: DA-PhilRice CES</Text>
+              </View>
+            </View>
+            <View style={styles.table}>
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableCell, styles.header]}>Name</Text>
+                <Text style={[styles.tableCell, styles.header]}>
+                  Office/
+                  <br />
+                  Agency
+                </Text>
+                <Text style={[styles.tableCell, styles.header]}>Day 1</Text>
+                <Text style={[styles.tableCell, styles.header]}>Day 2</Text>
+                <Text style={[styles.tableCell, styles.header]}>Day 3</Text>
+                <Text style={[styles.tableCell, styles.header]}>Day 4</Text>
+                <Text style={[styles.tableCell, styles.header]}>
+                  Total
+                </Text>{" "}
+                {/* New header */}
+              </View>
+              {chunk.map((user, index) => {
+                const totalAttendance = [
+                  user.day1timeAttended,
+                  user.day2timeAttended,
+                  user.day3timeAttended,
+                  user.day4timeAttended,
+                ].filter((day) => day).length; // Count non-empty days
 
                 return (
-                  <tr key={item.id} className="hover:bg-gray-100">
-                    <td className="px-4 py-2 border-b">
-                      {item.fullName || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 border-b">
-                      {item.philriceStation || item.affiliationName || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 border-b">
-                      {item.day1timeAttended || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 border-b">
-                      {item.day2timeAttended || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 border-b">
-                      {item.day3timeAttended || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 border-b">
-                      {item.day4timeAttended || "N/A"}
-                    </td>
-                    <td className="px-4 py-2 border-b">{attendedDays}</td>
-                  </tr>
+                  <View style={styles.tableRow} key={index}>
+                    <Text style={styles.tableCell}>{user.fullName}</Text>
+                    <Text style={styles.tableCell}>
+                      {user.philriceStation || user.affiliationName}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {user.day1timeAttended}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {user.day2timeAttended}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {user.day3timeAttended}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {user.day4timeAttended}
+                    </Text>
+                    <Text style={styles.tableCell}>{totalAttendance}</Text>{" "}
+                    {/* Display Total */}
+                  </View>
                 );
               })}
-            </tbody>
-          </table>
+            </View>
+            <Text style={styles.time}>
+              DATE AND TIME PRINTED: {formattedDate} {formattedTime}
+            </Text>
+          </View>
+        </Page>
+      ))}
+    </Document>
+  );
 
-          {/* <button
-            onClick={exportToPDF}
-            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-            Export to PDF
-          </button> */}
-        </>
-      ) : (
-        <p className="mt-4 text-gray-500">No data available</p>
-      )}
+  return (
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+        <h1 className="text-3xl font-bold text-center mb-6">User Data</h1>
+        <div className="mt-6">
+          <h2 className="text-xl mb-4">PDF Preview:</h2>
+          <PDFViewer width="100%" height="600px">
+            <MyDocument />
+          </PDFViewer>
+        </div>
+        <div className="mt-6">
+          <PDFDownloadLink
+            document={<MyDocument />}
+            fileName="user-data-report.pdf">
+            <button className="bg-blue-500 text-white p-2 rounded">
+              Export to PDF
+            </button>
+          </PDFDownloadLink>
+        </div>
+        <table className="min-w-full table-auto">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="px-4 py-2 text-left">Name</th>
+              <th className="px-4 py-2 text-left">Office/Agency</th>
+              <th className="px-4 py-2 text-left">12/2/2024</th>
+              <th className="px-4 py-2 text-left">12/3/2024</th>
+              <th className="px-4 py-2 text-left">12/4/2024</th>
+              <th className="px-4 py-2 text-left">12/5/2024</th>
+              <th className="px-4 py-2 text-left">Total</th> {/* New column */}
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user, index) => {
+              const totalAttendance = [
+                user.day1timeAttended,
+                user.day2timeAttended,
+                user.day3timeAttended,
+                user.day4timeAttended,
+              ].filter((day) => day).length; // Count non-empty days
+
+              return (
+                <tr key={index} className="border-t">
+                  <td className="px-4 py-2">{user.fullName}</td>
+                  <td className="px-4 py-2">
+                    {user.philriceStation || user.affiliationName}
+                  </td>
+                  <td className="px-4 py-2">{user.day1timeAttended}</td>
+                  <td className="px-4 py-2">{user.day2timeAttended}</td>
+                  <td className="px-4 py-2">{user.day3timeAttended}</td>
+                  <td className="px-4 py-2">{user.day4timeAttended}</td>
+                  <td className="px-4 py-2">{totalAttendance}</td>{" "}
+                  {/* Display Total */}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
-};
+}
 
-export default ReportData;
+export default App;
