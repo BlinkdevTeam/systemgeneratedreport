@@ -186,7 +186,7 @@ function App() {
                 <Text style={[styles.tableCell, styles.header]}>Day 3</Text>
                 <Text style={[styles.tableCell, styles.header]}>Day 4</Text>
                 <Text style={[styles.tableCell, styles.header]}>
-                  Total
+                  No. of Days Present
                 </Text>{" "}
                 {/* New header */}
               </View>
