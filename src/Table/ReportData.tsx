@@ -64,7 +64,7 @@ function App() {
     return chunks;
   };
 
-  const userChunks = chunkArray(users, 10);
+  const userChunks = chunkArray(users, 8);
 
   const styles = StyleSheet.create({
     page: {
@@ -84,7 +84,7 @@ function App() {
       borderStyle: "solid",
       borderWidth: 1,
       borderColor: "#000",
-      marginTop: 10,
+      marginTop: 2,
     },
     tableRow: {
       display: "flex",
@@ -100,10 +100,19 @@ function App() {
       textAlign: "left",
       fontSize: 10,
     },
+    pretableCell: {
+      flex: 1,
+      padding: 2,
+      borderStyle: "solid",
+      borderWidth: 1,
+      borderColor: "#000",
+      textAlign: "left",
+      fontSize: 10,
+    },
     header: {
       backgroundColor: "#f0f0f0",
       fontWeight: "bold",
-      fontSize: 12,
+      fontSize: 10,
       textAlign: "center",
       padding: 2,
     },
@@ -145,89 +154,164 @@ function App() {
   const formattedDate = currentDate.toLocaleDateString();
   const formattedTime = currentDate.toLocaleTimeString();
 
+  const totalParticipants = users.length;
+  const totalDay1Attendance = users.filter(
+    (user) => user.day1timeAttended
+  ).length;
+  const totalDay2Attendance = users.filter(
+    (user) => user.day2timeAttended
+  ).length;
+  const totalDay3Attendance = users.filter(
+    (user) => user.day3timeAttended
+  ).length;
+  const totalDay4Attendance = users.filter(
+    (user) => user.day4timeAttended
+  ).length;
+
   const MyDocument = () => (
     <Document>
       {userChunks.map((chunk, pageIndex) => (
-        <Page style={styles.page} key={pageIndex}>
-          <View style={styles.section}>
-            <View style={styles.headerRow}>
-              <Image style={styles.logo} src={Logo} />
-              <View style={styles.headerColumn}>
-                <Text style={styles.title}>
-                  2/F Left Wing, ES Plaza, Lopez Ave, Los Baños Laguna,
-                  Philippines
-                </Text>
-                <Text style={styles.title}>
-                  inquiries@blinkcreativestudio.com
-                </Text>
-                <Text style={styles.title}>0949 993 7469 / 0915 377 1777</Text>
-                <Text style={styles.title}>www.blinkcreativestudio.com</Text>
+        <>
+          <Page style={styles.page} key={pageIndex}>
+            <View style={styles.section}>
+              <View style={styles.headerRow}>
+                <Image style={styles.logo} src={Logo} />
+                <View style={styles.headerColumn}>
+                  <Text style={styles.title}>
+                    2/F Left Wing, ES Plaza, Lopez Ave, Los Baños Laguna,
+                    Philippines
+                  </Text>
+                  <Text style={styles.title}>
+                    inquiries@blinkcreativestudio.com
+                  </Text>
+                  <Text style={styles.title}>
+                    0949 993 7469 / 0915 377 1777
+                  </Text>
+                  <Text style={styles.title}>www.blinkcreativestudio.com</Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.headerRow}>
-              <View style={styles.bodyColumn}>
-                <Text style={styles.body}>
-                  Activity/Event: 36th Ugnay Palay Attendees
-                </Text>
-                <Text style={styles.body}>Date: December 3-5, 2024</Text>
-                <Text style={styles.body}>Venue: DA-PhilRice CES</Text>
+              <View style={styles.headerRow}>
+                <View style={styles.bodyColumn}>
+                  <Text style={styles.body}>
+                    Activity/Event: 36th Ugnay Palay Attendees
+                  </Text>
+                  <Text style={styles.body}>Date: December 3-5, 2024</Text>
+                  <Text style={styles.body}>Venue: DA-PhilRice CES</Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.table}>
-              <View style={styles.tableRow}>
-                <Text style={[styles.tableCell, styles.header]}>Name</Text>
-                <Text style={[styles.tableCell, styles.header]}>
-                  Office/
-                  <br />
-                  Agency
-                </Text>
-                <Text style={[styles.tableCell, styles.header]}>Day 1</Text>
-                <Text style={[styles.tableCell, styles.header]}>Day 2</Text>
-                <Text style={[styles.tableCell, styles.header]}>Day 3</Text>
-                <Text style={[styles.tableCell, styles.header]}>Day 4</Text>
-                <Text style={[styles.tableCell, styles.header]}>
-                  No. of Days Present
-                </Text>{" "}
-                {/* New header */}
-              </View>
-              {chunk.map((user, index) => {
-                const totalAttendance = [
-                  user.day1timeAttended,
-                  user.day2timeAttended,
-                  user.day3timeAttended,
-                  user.day4timeAttended,
-                ].filter((day) => day).length; // Count non-empty days
+              <View style={styles.table}>
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableCell, styles.header]}>Name</Text>
+                  <Text style={[styles.tableCell, styles.header]}>
+                    Office/
+                    <br />
+                    Agency
+                  </Text>
+                  <Text style={[styles.tableCell, styles.header]}>Day 1</Text>
+                  <Text style={[styles.tableCell, styles.header]}>Day 2</Text>
+                  <Text style={[styles.tableCell, styles.header]}>Day 3</Text>
+                  <Text style={[styles.tableCell, styles.header]}>Day 4</Text>
+                  <Text style={[styles.pretableCell, styles.header]}>
+                    No. of Days Present
+                  </Text>{" "}
+                  {/* New header */}
+                </View>
+                {chunk.map((user, index) => {
+                  const totalAttendance = [
+                    user.day1timeAttended,
+                    user.day2timeAttended,
+                    user.day3timeAttended,
+                    user.day4timeAttended,
+                  ].filter((day) => day).length; // Count non-empty days
 
-                return (
-                  <View style={styles.tableRow} key={index}>
-                    <Text style={styles.tableCell}>{user.fullName}</Text>
-                    <Text style={styles.tableCell}>
-                      {user.philriceStation || user.affiliationName}
-                    </Text>
-                    <Text style={styles.tableCell}>
-                      {user.day1timeAttended}
-                    </Text>
-                    <Text style={styles.tableCell}>
-                      {user.day2timeAttended}
-                    </Text>
-                    <Text style={styles.tableCell}>
-                      {user.day3timeAttended}
-                    </Text>
-                    <Text style={styles.tableCell}>
-                      {user.day4timeAttended}
-                    </Text>
-                    <Text style={styles.tableCell}>{totalAttendance}</Text>{" "}
-                    {/* Display Total */}
-                  </View>
-                );
-              })}
+                  return (
+                    <View style={styles.tableRow} key={index}>
+                      <Text style={styles.tableCell}>{user.fullName}</Text>
+                      <Text style={styles.tableCell}>
+                        {user.philriceStation || user.affiliationName}
+                      </Text>
+                      <Text style={styles.tableCell}>
+                        {user.day1timeAttended}
+                      </Text>
+                      <Text style={styles.tableCell}>
+                        {user.day2timeAttended}
+                      </Text>
+                      <Text style={styles.tableCell}>
+                        {user.day3timeAttended}
+                      </Text>
+                      <Text style={styles.tableCell}>
+                        {user.day4timeAttended}
+                      </Text>
+                      <Text style={styles.tableCell}>{totalAttendance}</Text>{" "}
+                      {/* Display Total */}
+                    </View>
+                  );
+                })}
+              </View>
+              <Text style={styles.time}>
+                DATE AND TIME PRINTED: {formattedDate} {formattedTime}
+              </Text>
             </View>
-            <Text style={styles.time}>
-              DATE AND TIME PRINTED: {formattedDate} {formattedTime}
-            </Text>
-          </View>
-        </Page>
+          </Page>
+        </>
       ))}
+      <Page style={styles.page}>
+        <View style={styles.section}>
+          <View style={styles.headerRow}>
+            <Image style={styles.logo} src={Logo} />
+            <View style={styles.headerColumn}>
+              <Text style={styles.title}>
+                2/F Left Wing, ES Plaza, Lopez Ave, Los Baños Laguna,
+                Philippines
+              </Text>
+              <Text style={styles.title}>
+                inquiries@blinkcreativestudio.com
+              </Text>
+              <Text style={styles.title}>0949 993 7469 / 0915 377 1777</Text>
+              <Text style={styles.title}>www.blinkcreativestudio.com</Text>
+            </View>
+          </View>
+          <View style={styles.headerRow}>
+            <View style={styles.bodyColumn}>
+              <Text style={styles.body}>
+                Activity/Event: 36th Ugnay Palay Attendees
+              </Text>
+              <Text style={styles.body}>Date: December 3-5, 2024</Text>
+              <Text style={styles.body}>Venue: DA-PhilRice CES</Text>
+            </View>
+          </View>
+          <Text style={styles.body}>Summary</Text>
+          <View style={styles.table}>
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableCell, styles.header]}>
+                Total Participants
+              </Text>
+              <Text style={[styles.tableCell, styles.header]}>
+                Day 1 Attendance
+              </Text>
+              <Text style={[styles.tableCell, styles.header]}>
+                Day 2 Attendance
+              </Text>
+              <Text style={[styles.tableCell, styles.header]}>
+                Day 3 Attendance
+              </Text>
+              <Text style={[styles.tableCell, styles.header]}>
+                Day 4 Attendance
+              </Text>
+            </View>
+            <View style={styles.tableRow}>
+              <Text style={styles.tableCell}>{totalParticipants}</Text>
+              <Text style={styles.tableCell}>{totalDay1Attendance}</Text>
+              <Text style={styles.tableCell}>{totalDay2Attendance}</Text>
+              <Text style={styles.tableCell}>{totalDay3Attendance}</Text>
+              <Text style={styles.tableCell}>{totalDay4Attendance}</Text>
+            </View>
+          </View>
+          <Text style={styles.time}>
+            DATE AND TIME PRINTED: {formattedDate} {formattedTime}
+          </Text>
+        </View>
+      </Page>
     </Document>
   );
 
@@ -244,7 +328,8 @@ function App() {
         <div className="mt-6">
           <PDFDownloadLink
             document={<MyDocument />}
-            fileName="user-data-report.pdf">
+            fileName="user-data-report.pdf"
+          >
             <button className="bg-blue-500 text-white p-2 rounded">
               Export to PDF
             </button>
